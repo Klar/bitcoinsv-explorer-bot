@@ -7,5 +7,4 @@ The source of information are from <a href="https://blockchair.com">Blockchair</
 Pull requests are welcome.
 
 ## TODO
-* Message on new block
-* publish transaction hex
+* Message on new block?
