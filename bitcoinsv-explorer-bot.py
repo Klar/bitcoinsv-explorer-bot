@@ -14,7 +14,7 @@ bot = telegram.Bot(token="")
 dispatcher = updater.dispatcher
 
 # uncomment for logging output:
-# logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 def convert_size(size_bytes):
    if size_bytes == 0:
