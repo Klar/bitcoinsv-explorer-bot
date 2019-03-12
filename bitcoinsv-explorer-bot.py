@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     filter_address = Filter_address()
     filter_tx = Filter_tx()
-    Filter_rawhex = Filter_transaction()
+    Filter_rawhex = Filter_rawhex()
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
 
