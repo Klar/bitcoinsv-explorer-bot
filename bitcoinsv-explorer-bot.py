@@ -89,9 +89,11 @@ def addr(bot, update):
     tbbsv = str(final)
     tbusd = str(date["data"][addr]["address"]["balance_usd"])
     t = str(date["data"][addr]["address"]["transaction_count"])
+    addressLink = "https://blockchair.com/" + chain + "/address/" + addr
     bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Balance BSV:</b> <code>{tbbsv}</code>" + "\n"
                      f"<b>Total Balance USD:</b> <code>{tbusd}</code>" + "\n"
-                     f"<b>Transactions:</b> <code>{t}</code>", parse_mode=telegram.ParseMode.HTML)
+                     f"<b>Transactions:</b> <code>{t}</code>" + "\n"
+                     f"<b>link: </b><a href='{addressLink}'>{addr}</a>", parse_mode=telegram.ParseMode.HTML)
 
 def tx(bot, update):
     typing(bot, update)
@@ -119,6 +121,7 @@ def tx(bot, update):
     fees = str(date["data"][tx]["transaction"]["fee"])
     feeUsd = str(float(tivusd) - float(tovusd))
     coinb = str(date["data"][tx]["transaction"]["is_coinbase"])
+    txLink = "https://blockchair.com/" + chain + "/transaction/" + tx
     bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Input Value BSV:</b> <code>{tivbsv}</code>" + "\n"
                      f"<b>Total Input Value USD:</b> <code>{tivusd}</code>" + "\n"
                      f"<b>Total Output Value BSV:</b> <code>{tovbsv}</code>" + "\n"
@@ -127,7 +130,8 @@ def tx(bot, update):
                      f"<b>Confirmations:</b> <code>{confi}</code>" + "\n"
                      f"<b>Fee in Satoshi:</b> <code>{fees}</code>" + "\n"
                      f"<b>Fee in USD:</b> <code>{feeUsd}</code>" + "\n"
-                     f"<b>Coinbase:</b> <code>{coinb}</code>", parse_mode=telegram.ParseMode.HTML)
+                     f"<b>Coinbase:</b> <code>{coinb}</code>" + "\n"
+                     f"<b>link: </b><a href='{txLink}'>{tx}</a>", parse_mode=telegram.ParseMode.HTML)
 
 def blockchainstatus(bot, update):
     typing(bot, update)
