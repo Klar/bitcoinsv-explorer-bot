@@ -7,4 +7,5 @@ The source of information are from <a href="https://blockchair.com">Blockchair</
 Pull requests are welcome.
 
 ## TODO
+* link to mempool tx after raw hex broadcast
 * Message on new block?
