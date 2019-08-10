@@ -14,7 +14,7 @@ bot = telegram.Bot(token="")
 dispatcher = updater.dispatcher
 
 # uncomment for logging output:
-logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.ERROR)
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -85,12 +85,11 @@ def addr(bot, update):
     date = get_address.json()
     satoshi = 0.00000001
     conv = date["data"][addr]["address"]["balance"]
-    final = satoshi*float(conv)
-    tbbsv = str(final)
+    final = '{0:.8f}'.format(satoshi*float(conv))
     tbusd = str(date["data"][addr]["address"]["balance_usd"])
     t = str(date["data"][addr]["address"]["transaction_count"])
     addressLink = "https://blockchair.com/" + chain + "/address/" + addr
-    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Balance BSV:</b> <code>{tbbsv}</code>" + "\n"
+    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Balance BSV:</b> <code>{final}</code>" + "\n"
                      f"<b>Total Balance USD:</b> <code>{tbusd}</code>" + "\n"
                      f"<b>Transactions:</b> <code>{t}</code>" + "\n"
                      f"<b>link: </b><a href='{addressLink}'>{addr}</a>", parse_mode=telegram.ParseMode.HTML)
