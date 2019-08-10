@@ -7,6 +7,9 @@ from telegram.ext import (Updater, CommandHandler,
 import telegram
 import logging
 
+import qrcode
+from io import BytesIO
+
 chain = "bitcoin-sv"
 updater = Updater(token="")
 bot = telegram.Bot(token="")
@@ -47,6 +50,8 @@ def typing(bot, update):
         bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
 
 def start(bot, update):
+    address = "1GpEXHB5d8tzKZR8XAkEqrUXNXfEaQDeky"
+
     typing(bot, update)
     bot.send_message(chat_id=update.message.chat_id, text="Hello, I am a bot for the " + chain + " Blockchain Explorer. You can use these commands:\n"
                      "/check_address\n"
@@ -56,7 +61,15 @@ def start(bot, update):
                      "/price\n"
                      "/start (this message)\n\n"
 
-                     "<b>Support me: 1GpEXHB5d8tzKZR8XAkEqrUXNXfEaQDeky</b>", parse_mode=telegram.ParseMode.HTML)
+                     f"<b>Support me: {address}</b>", parse_mode=telegram.ParseMode.HTML)
+
+    # generate QR from address
+    img = qrcode.make(address)
+    bio = BytesIO()
+    bio.name = address + '.jpeg'
+    img.save(bio, 'JPEG')
+    bio.seek(0)
+    bot.send_photo(update.message.chat_id, photo=bio)
 
 def check_address(bot, update):
     typing(bot, update)
