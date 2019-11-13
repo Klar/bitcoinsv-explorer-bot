@@ -10,14 +10,15 @@ import logging
 import qrcode
 from io import BytesIO
 
-chain = "bitcoin-sv"
-updater = Updater(token="")
 bot = telegram.Bot(token="")
 
-dispatcher = updater.dispatcher
-
 # uncomment for logging output:
-logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.ERROR)
+logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+network = "main"
+apilink = "https://api.whatsonchain.com/v1/bsv/" + network
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -28,14 +29,18 @@ def convert_size(size_bytes):
    s = round(size_bytes / p, 2)
    return "%s %s" % (s, size_name[i])
 
-
 class Filter_address(BaseFilter):
     def filter(self, message):
         return len(message.text) == 34
 
-class Filter_tx(BaseFilter):
+class Filter_blockhash(BaseFilter):
     def filter(self, message):
-        return len(message.text) == 64
+        print(message)
+        return len(message.text) == 64 and message.text.startswith("000")
+
+class Filter_txhash(BaseFilter):
+    def filter(self, message):
+        return len(message.text) == 64 and not message.text.startswith("000")
 
 class Filter_rawhex(BaseFilter):
     def filter(self, message):
@@ -45,108 +50,101 @@ class Filter_rawhex(BaseFilter):
         if len(message.text) > 64:
             return bool(pattern.match(message.text))
 
-def typing(bot, update):
-        print(update.message)
+def typing(update, context):
         bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
 
-def start(bot, update):
+def error(update, context):
+    """Log Errors caused by Updates."""
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
+
+def start(update, context):
     address = "1GpEXHB5d8tzKZR8XAkEqrUXNXfEaQDeky"
 
-    typing(bot, update)
-    bot.send_message(chat_id=update.message.chat_id, text="Hello, I am a bot for the " + chain + " Blockchain Explorer. You can use these commands:\n"
-                     "/check_address\n"
-                     "/check_transaction\n"
-                     "/send_rawhex\n"
+    typing(update, context)
+    update.message.reply_text("Hello, I am a bot for the Bitcoin SV Blockchain. You can use these commands:\n"
+                     "/address\n"
+                     "/sendhash\n"
+                     "/broadcast\n"
+                     "/decodetxhex\n"
+                     # "/getreceipt\n"
+                     "/mempool\n"
                      "/blockchainstatus\n"
                      "/price\n"
                      "/start (this message)\n\n"
 
                      f"<b>Support me: {address}</b>", parse_mode=telegram.ParseMode.HTML)
 
-    # generate QR from address
-    img = qrcode.make(address)
+    qr = qrcode.QRCode(box_size=5)
+    qr.add_data(address)
+    qr.make()
+    img = qr.make_image()
     bio = BytesIO()
     bio.name = address + '.jpeg'
     img.save(bio, 'JPEG')
     bio.seek(0)
     bot.send_photo(update.message.chat_id, photo=bio)
 
-def check_address(bot, update):
-    typing(bot, update)
-    bot.send_message(chat_id=update.message.chat_id,
-                     text="Send me the Bitcoin address to check the balance")
+def check_address(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me the Bitcoin address to check the balance")
 
-def check_transaction(bot, update):
-    typing(bot, update)
-    bot.send_message(chat_id=update.message.chat_id,
-                     text="Send me the transaction hash to get transaction information")
+def check_transaction(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me the transaction hash to get transaction information")
 
-def send_rawhex(bot, update):
-    typing(bot, update)
-    bot.send_message(chat_id=update.message.chat_id,
-                     text="Send me the raw hex and I will broadcast it for you.")
+def send_rawhex(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me the raw hex and I will broadcast it for you.")
 
-def addr(bot, update):
-    typing(bot, update)
+def decode_txhex(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me the raw hex and I will broadcast it for you.")
+
+def mempool(update, context):
+    typing(update, context)
+    update.message.reply_text("Not yet ready")
+
+def send_hash(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me a TX or Block hash")
+
+def addr(update, context):
+    typing(update, context)
     addr = (update.message.text)
 
     # print(update.message.from.first_name + ": ")
-    print(update.message.text)
+    print(addr)
+    link = apilink + "/address/" + addr + "/balance"
+    addressLink = "https://whatsonchain.com/address/" + addr
+    receipt = "https://" + network + ".whatsonchain.com/statement/" + addr
 
-    link = "https://api.blockchair.com/" + chain + "/dashboards/address/"
-    get_address = requests.get(link+addr)
-    date = get_address.json()
+    balance = requests.get(link).json()
     satoshi = 0.00000001
-    conv = date["data"][addr]["address"]["balance"]
-    final = '{0:.8f}'.format(satoshi*float(conv))
-    tbusd = str(date["data"][addr]["address"]["balance_usd"])
-    t = str(date["data"][addr]["address"]["transaction_count"])
-    addressLink = "https://blockchair.com/" + chain + "/address/" + addr
-    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Balance BSV:</b> <code>{final}</code>" + "\n"
-                     f"<b>Total Balance USD:</b> <code>{tbusd}</code>" + "\n"
-                     f"<b>Transactions:</b> <code>{t}</code>" + "\n"
-                     f"<b>link: </b><a href='{addressLink}'>{addr}</a>", parse_mode=telegram.ParseMode.HTML)
+    confirmed = '{0:.8f}'.format(satoshi*float(balance['confirmed']))
+    unconfirmed = '{0:.8f}'.format(satoshi*float(balance['unconfirmed']))
+    update.message.reply_text(f"<b>confirmed:</b> <code>{confirmed} BSV</code>\n"
+                              f"<b>unonfirmed:</b> <code>{unconfirmed} BSV</code>\n"
+                              f" * Explorer: <a href='{addressLink}'>{addr}</a>\n"
+                              f" * Receipt: <a href='{receipt}'>Receipt</a>\n", parse_mode=telegram.ParseMode.HTML)
 
-def tx(bot, update):
-    typing(bot, update)
+def txHash(update, context):
+    typing(update, context)
     tx = (update.message.text)
 
-    print(update.message.text)
+    txlink = "https://whatsonchain.com/tx/" + tx
 
-    link = "https://api.blockchair.com/" + chain + "/dashboards/transaction/"
-    get_tx = requests.get(link+tx)
-    date = get_tx.json()
-    satoshi = 0.00000001
-    conv = date["data"][tx]["transaction"]["input_total"]
-    final = satoshi*float(conv)
-    conv_two = date["data"][tx]["transaction"]["output_total"]
-    final_two = satoshi*float(conv_two)
-    current_block = date["context"]["state"]
-    init_block = date["data"][tx]["transaction"]["block_id"]
-    conf = current_block - init_block
-    tivbsv = str(final)
-    tivusd = str(date["data"][tx]["transaction"]["input_total_usd"])
-    tovbsv = str(final_two)
-    tovusd = str(date["data"][tx]["transaction"]["output_total_usd"])
-    sb = str(date["data"][tx]["transaction"]["size"])
-    confi = str(conf)
-    fees = str(date["data"][tx]["transaction"]["fee"])
-    feeUsd = str(float(tivusd) - float(tovusd))
-    coinb = str(date["data"][tx]["transaction"]["is_coinbase"])
-    txLink = "https://blockchair.com/" + chain + "/transaction/" + tx
-    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Total Input Value BSV:</b> <code>{tivbsv}</code>" + "\n"
-                     f"<b>Total Input Value USD:</b> <code>{tivusd}</code>" + "\n"
-                     f"<b>Total Output Value BSV:</b> <code>{tovbsv}</code>" + "\n"
-                     f"<b>Total Output Value USD:</b> <code>{tovusd}</code>" + "\n"
-                     f"<b>Size (byte):</b> <code>{sb}</code>" + "\n"
-                     f"<b>Confirmations:</b> <code>{confi}</code>" + "\n"
-                     f"<b>Fee in Satoshi:</b> <code>{fees}</code>" + "\n"
-                     f"<b>Fee in USD:</b> <code>{feeUsd}</code>" + "\n"
-                     f"<b>Coinbase:</b> <code>{coinb}</code>" + "\n"
-                     f"<b>link: </b><a href='{txLink}'>{tx}</a>", parse_mode=telegram.ParseMode.HTML)
+    update.message.reply_text(f"<a href='{txlink}'>{tx}</a>\n", parse_mode=telegram.ParseMode.HTML)
 
-def blockchainstatus(bot, update):
-    typing(bot, update)
+def decodeHex(update, context):
+    typing(update, context)
+    hex = (update.message.text)
+
+def blockHash(update, context):
+    typing(update, context)
+    tx = (update.message.text)
+
+def blockchainstatus(update, context):
+    typing(update, context)
     status = "https://api.blockchair.com/" + chain + "/stats"
     status_get = requests.get(status)
     date = status_get.json()
@@ -164,7 +162,7 @@ def blockchainstatus(bot, update):
     mempoolSize = str(date["data"]["mempool_size"])
     cs = str("{:,}".format(round(date["data"]["circulation"] / 21000000000000, 3)))
     blockchainSize = convert_size(date["data"]["blockchain_size"])
-    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Block Height:</b> <code>{b}</code>" + "\n"
+    update.message.reply_text(f"<b>Block Height:</b> <code>{b}</code>" + "\n"
                      f"<b>Last Block (UTC):</b> <code>{bestBlockTime}</code>" + "\n"
                      f"<b>Blocks in 24h:</b> <code>{bh}</code>" + "\n"
                      f"<b>Transactions in 24h:</b> <code>{th}</code>" + "\n"
@@ -179,29 +177,34 @@ def blockchainstatus(bot, update):
                      f"<b>Blockchain Size:</b> <code>{blockchainSize}</code>" + "\n"
                      f"<b>Circulation supply percentage:</b> <code>{cs}</code>", parse_mode=telegram.ParseMode.HTML)
 
-def price(bot, update):
-    typing(bot, update)
-    link = "https://api.blockchair.com/" + chain + "/stats"
-    link_get = requests.get(link)
-    date = link_get.json()
-    p = str(round(date["data"]["market_price_usd"], 2))
-    vh = str("{:,}".format(date["data"]["volume_24h"]))
-    pch = str(round(date["data"]["market_price_usd_change_24h_percentage"], 2))
-    mcusd = str("{:,}".format(round(date["data"]["market_cap_usd"], 2)))
-    qu = str(date["data"]["market_dominance_percentage"])
-    bot.send_message(chat_id=update.message.chat_id, text=f"<b>Price USD:</b> <code>{p}</code>" + "\n"
-                     f"<b>Percent change 24h:</b> <code>{pch}%</code>" + "\n"
-                     f"<b>Market Dominance: </b> <code>{qu}%</code>" + "\n"
-                     f"<b>Market cap USD:</b> <code>{mcusd}</code>" + "\n"
-                     f"<b>Volume 24h:</b> <code>{vh}</code>", parse_mode=telegram.ParseMode.HTML)
+def price(update, context):
+    typing(update, context)
 
-def send_transaction(bot, update):
-    typing(bot, update)
-    bot.send_message(chat_id=update.message.chat_id,
-                     text="Send me the (signed) transaction Hex")
+    url = "https://babel.bitdb.network/q/1DHDifPvtPgKFPZMRSxmVHhiPvFmxZwbfh/ewogICJ2IjogMywKICAiZGIiOiBbInUiXSwKICAicSI6IHsKICAgICJmaW5kIjogeyAKICAgICAgIm91dC5zMSI6ICIxOWRiek1ERGc0alo0cHZZekxiMjkxblQ4dUNxRGE2MXpIIiwKICAgICAgIm91dC5zNCI6ICIxMmVMVHh2MXZ5VWVKdHA1enFXYnFwZFd2ZkxkWjdkR2Y4IgogICAgfSwKICAgICJwcm9qZWN0IjogewogICAgICAiaW4uZS5hIjogMSwgIm91dC5zMSI6IDEsICJvdXQuczMiOiAxLCAib3V0LnM0IjogMSwgIm91dC5zNSI6IDEKICAgIH0sCiAgICAibGltaXQiIDogMQogIH0sCiAgInIiOiB7CiAgICAiZiI6ICJbLltdIHwgLm91dFswXSB8IHsgcHJlZml4OiAuczEsIGpzb246IC5zMywgY3VycmVuY3lfYWRkcjogLnM0LCBkYXRldGltZTogLnM1fSBdIgogIH0KfQo="
+    api_token = '147GjmCAREtYv7FdfDivthzcmQLmdEhSYe'
+    headers = {'key': api_token}
+    response = requests.get(url, headers=headers)
+    response = response.json()
 
-def sendTransaction(bot, update):
-    typing(bot, update)
+    if response["u"]:
+        response = response["u"]
+    else:
+        response = response["c"]
+
+    response = json.loads(response[0]["json"])
+
+    exchangeList = ""
+    for exchangeName in response:
+        exchangeList += exchangeName + " : " + str(response[exchangeName]["l"]) + "\n"
+
+    update.message.reply_text(f"<code>{exchangeList}</code>", parse_mode=telegram.ParseMode.HTML)
+
+def send_transaction(update, context):
+    typing(update, context)
+    update.message.reply_text("Send me the (signed) transaction Hex")
+
+def sendTransaction(update, context):
+    typing(update, context)
     values = {
         'rawtx': update.message.text
     }
@@ -215,34 +218,50 @@ def sendTransaction(bot, update):
 
     print(request.text)
 
-    bot.send_message(chat_id=update.message.chat_id, text=f"<code>{request.text}</code>", parse_mode=telegram.ParseMode.HTML)
+    update.message.reply_text(f"<code>{request.text}</code>", parse_mode=telegram.ParseMode.HTML)
 
-if __name__ == "__main__":
+def main():
+    # Create the Updater and pass it your bot's token.
+    # Make sure to set use_context=True to use the new context based callbacks
+    # Post version 12 this will no longer be necessary
+    updater = Updater(token="636520322:AAHvDKCBqAIW40iWKGhsO2AKZneCCol_p8Y", use_context=True)
+    # updater = Updater("TOKEN", use_context=True)
 
+    # initialize filters
     filter_address = Filter_address()
-    filter_tx = Filter_tx()
-    Filter_rawhex = Filter_rawhex()
+    filter_txhash = Filter_txhash()
+    filter_blockhash = Filter_blockhash()
+    filter_rawhex = Filter_rawhex()
 
-    updater.dispatcher.add_handler(CommandHandler("start", start))
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
 
-    updater.dispatcher.add_handler(
-        CommandHandler("check_address", check_address))
-    updater.dispatcher.add_handler(MessageHandler(filter_address, addr))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("price", price))
+    dp.add_handler(CommandHandler("blockchainstatus", blockchainstatus))
+    dp.add_handler(CommandHandler("address", check_address))
+    dp.add_handler(CommandHandler("sendhash", send_hash))
+    dp.add_handler(CommandHandler("broadcast", send_rawhex))
+    dp.add_handler(CommandHandler("decodetxhex", decode_txhex))
+    # dp.add_handler(CommandHandler("getreceipt", getreceipt))
+    dp.add_handler(CommandHandler("mempool", mempool))
 
-    updater.dispatcher.add_handler(CommandHandler(
-        "check_transaction", check_transaction))
-    updater.dispatcher.add_handler(MessageHandler(filter_tx, tx))
+    dp.add_handler(MessageHandler(filter_address, addr))
+    dp.add_handler(MessageHandler(filter_txhash, txHash))
+    dp.add_handler(MessageHandler(filter_blockhash, blockHash))
+    dp.add_handler(MessageHandler(filter_rawhex, decodeHex))
 
-    updater.dispatcher.add_handler(
-        CommandHandler("send_rawhex", send_rawhex))
 
-    updater.dispatcher.add_handler(CommandHandler(
-        "blockchainstatus", blockchainstatus))
-    updater.dispatcher.add_handler(CommandHandler("price", price))
+    # log all errors
+    dp.add_error_handler(error)
 
-    updater.dispatcher.add_handler(
-        CommandHandler("sendtransaction", send_transaction))
-    updater.dispatcher.add_handler(MessageHandler(Filter_rawhex, sendTransaction))
-
+    # Start the Bot
     updater.start_polling()
+
+    # Block until the user presses Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+
+if __name__ == '__main__':
+    main()
