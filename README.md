@@ -6,6 +6,9 @@ The source of information are from <a href="https://blockchair.com">Blockchair</
 
 Pull requests are welcome.
 
+Instal requirements
+ sudo pip install -r requirements.txt
+
 ## TODO
 * link to mempool tx after raw hex broadcast
 * Message on new block?
