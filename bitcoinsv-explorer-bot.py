@@ -10,7 +10,7 @@ import logging
 import qrcode
 from io import BytesIO
 
-bot = telegram.Bot(token="")
+bot = telegram.Bot(token="TOKEN")
 
 # uncomment for logging output:
 logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -222,10 +222,8 @@ def sendTransaction(update, context):
 
 def main():
     # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-    updater = Updater(token="636520322:AAHvDKCBqAIW40iWKGhsO2AKZneCCol_p8Y", use_context=True)
-    # updater = Updater("TOKEN", use_context=True)
+    updater = Updater("TOKEN", use_context=True)
+
 
     # initialize filters
     filter_address = Filter_address()
