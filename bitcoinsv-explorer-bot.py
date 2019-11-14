@@ -10,7 +10,8 @@ import logging
 import qrcode
 from io import BytesIO
 
-bot = telegram.Bot(token="TOKEN")
+token = ""
+bot = telegram.Bot(token=token)
 
 # uncomment for logging output:
 logging.basicConfig( format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -35,7 +36,7 @@ class Filter_address(BaseFilter):
 
 class Filter_blockhash(BaseFilter):
     def filter(self, message):
-        print(message)
+        # print(message)
         return len(message.text) == 64 and message.text.startswith("000")
 
 class Filter_txhash(BaseFilter):
@@ -64,11 +65,9 @@ def start(update, context):
     update.message.reply_text("Hello, I am a bot for the Bitcoin SV Blockchain. You can use these commands:\n"
                      "/address\n"
                      "/sendhash\n"
-                     "/broadcast\n"
-                     "/decodetxhex\n"
-                     # "/getreceipt\n"
+                     "/broadcasthex\n"
                      "/mempool\n"
-                     "/blockchainstatus\n"
+                     # "/blockchainstatus\n"
                      "/price\n"
                      "/start (this message)\n\n"
 
@@ -96,13 +95,20 @@ def send_rawhex(update, context):
     typing(update, context)
     update.message.reply_text("Send me the raw hex and I will broadcast it for you.")
 
-def decode_txhex(update, context):
-    typing(update, context)
-    update.message.reply_text("Send me the raw hex and I will broadcast it for you.")
-
 def mempool(update, context):
     typing(update, context)
-    update.message.reply_text("Not yet ready")
+
+    mempoolLink = apilink + "/mempool/info"
+    response = requests.get(mempoolLink)
+    response = response.json()
+    mempoolSize = convert_size(response["bytes"])
+    mempoolTXs = response["size"]
+    mempoolUsage = convert_size(response["usage"])
+    update.message.reply_text(f"<b>Mempool</b>\n"
+                              f"<b>Size: </b> <code>{mempoolSize}</code>\n"
+                              f"<b>Transactions: </b> <code>{mempoolTXs}</code>\n"
+                              f"<b>Memory usage: </b> <code>{mempoolUsage}</code>\n", parse_mode=telegram.ParseMode.HTML)
+
 
 def send_hash(update, context):
     typing(update, context)
@@ -113,7 +119,7 @@ def addr(update, context):
     addr = (update.message.text)
 
     # print(update.message.from.first_name + ": ")
-    print(addr)
+    # print(addr)
     link = apilink + "/address/" + addr + "/balance"
     addressLink = "https://whatsonchain.com/address/" + addr
     receipt = "https://" + network + ".whatsonchain.com/statement/" + addr
@@ -135,47 +141,47 @@ def txHash(update, context):
 
     update.message.reply_text(f"<a href='{txlink}'>{tx}</a>\n", parse_mode=telegram.ParseMode.HTML)
 
-def decodeHex(update, context):
-    typing(update, context)
-    hex = (update.message.text)
-
 def blockHash(update, context):
     typing(update, context)
-    tx = (update.message.text)
+    blockhash = (update.message.text)
 
-def blockchainstatus(update, context):
-    typing(update, context)
-    status = "https://api.blockchair.com/" + chain + "/stats"
-    status_get = requests.get(status)
-    date = status_get.json()
-    b = str(date["data"]["blocks"])
-    bestBlockTime = str(date["data"]["best_block_time"])
-    bh = str(date["data"]["blocks_24h"])
-    th = str("{:,}".format(date["data"]["transactions_24h"]))
-    md = str("{:,}".format(date["data"]["difficulty"]))
-    hr = str(date["data"]["hashrate_24h"])
-    t = str("{:,}".format(date["data"]["transactions"]))
-    o = str("{:,}".format(date["data"]["outputs"]))
-    mt = str(date["data"]["mempool_transactions"])
-    tfimusd = str(date["data"]["mempool_total_fee_usd"])
-    tpsm = str(round(date["data"]["mempool_tps"], 2))
-    mempoolSize = str(date["data"]["mempool_size"])
-    cs = str("{:,}".format(round(date["data"]["circulation"] / 21000000000000, 3)))
-    blockchainSize = convert_size(date["data"]["blockchain_size"])
-    update.message.reply_text(f"<b>Block Height:</b> <code>{b}</code>" + "\n"
-                     f"<b>Last Block (UTC):</b> <code>{bestBlockTime}</code>" + "\n"
-                     f"<b>Blocks in 24h:</b> <code>{bh}</code>" + "\n"
-                     f"<b>Transactions in 24h:</b> <code>{th}</code>" + "\n"
-                     f"<b>Mining Difficulty:</b> <code>{md}</code>" + "\n"
-                     f"<b>Hashrate 24h:</b> <code>{hr}</code>" + "\n"
-                     f"<b>Transactions:</b> <code>{t}</code>" + "\n"
-                     f"<b>Outputs:</b> <code>{o}</code>" + "\n"
-                     f"<b>Mempool transactions:</b> <code>{mt}</code>" + "\n"
-                     f"<b>Mempool Total fees (USD):</b> <code>{tfimusd}</code>" + "\n"
-                     f"<b>Mempool Transactions per second:</b> <code>{tpsm}</code>" + "\n"
-                     f"<b>Mempool Size:</b> <code>{mempoolSize}</code>" + "\n"
-                     f"<b>Blockchain Size:</b> <code>{blockchainSize}</code>" + "\n"
-                     f"<b>Circulation supply percentage:</b> <code>{cs}</code>", parse_mode=telegram.ParseMode.HTML)
+    blockhashlink = "https://whatsonchain.com/block/" + blockhash
+
+    update.message.reply_text(f"<a href='{blockhashlink}'>{blockhash}</a>\n", parse_mode=telegram.ParseMode.HTML)
+
+# def blockchainstatus(update, context):
+#     typing(update, context)
+#     status = "https://api.blockchair.com/" + chain + "/stats"
+#     status_get = requests.get(status)
+#     date = status_get.json()
+#     b = str(date["data"]["blocks"])
+#     bestBlockTime = str(date["data"]["best_block_time"])
+#     bh = str(date["data"]["blocks_24h"])
+#     th = str("{:,}".format(date["data"]["transactions_24h"]))
+#     md = str("{:,}".format(date["data"]["difficulty"]))
+#     hr = str(date["data"]["hashrate_24h"])
+#     t = str("{:,}".format(date["data"]["transactions"]))
+#     o = str("{:,}".format(date["data"]["outputs"]))
+#     mt = str(date["data"]["mempool_transactions"])
+#     tfimusd = str(date["data"]["mempool_total_fee_usd"])
+#     tpsm = str(round(date["data"]["mempool_tps"], 2))
+#     mempoolSize = str(date["data"]["mempool_size"])
+#     cs = str("{:,}".format(round(date["data"]["circulation"] / 21000000000000, 3)))
+#     blockchainSize = convert_size(date["data"]["blockchain_size"])
+#     update.message.reply_text(f"<b>Block Height:</b> <code>{b}</code>" + "\n"
+#                      f"<b>Last Block (UTC):</b> <code>{bestBlockTime}</code>" + "\n"
+#                      f"<b>Blocks in 24h:</b> <code>{bh}</code>" + "\n"
+#                      f"<b>Transactions in 24h:</b> <code>{th}</code>" + "\n"
+#                      f"<b>Mining Difficulty:</b> <code>{md}</code>" + "\n"
+#                      f"<b>Hashrate 24h:</b> <code>{hr}</code>" + "\n"
+#                      f"<b>Transactions:</b> <code>{t}</code>" + "\n"
+#                      f"<b>Outputs:</b> <code>{o}</code>" + "\n"
+#                      f"<b>Mempool transactions:</b> <code>{mt}</code>" + "\n"
+#                      f"<b>Mempool Total fees (USD):</b> <code>{tfimusd}</code>" + "\n"
+#                      f"<b>Mempool Transactions per second:</b> <code>{tpsm}</code>" + "\n"
+#                      f"<b>Mempool Size:</b> <code>{mempoolSize}</code>" + "\n"
+#                      f"<b>Blockchain Size:</b> <code>{blockchainSize}</code>" + "\n"
+#                      f"<b>Circulation supply percentage:</b> <code>{cs}</code>", parse_mode=telegram.ParseMode.HTML)
 
 def price(update, context):
     typing(update, context)
@@ -203,7 +209,7 @@ def send_transaction(update, context):
     typing(update, context)
     update.message.reply_text("Send me the (signed) transaction Hex")
 
-def sendTransaction(update, context):
+def broadcasthex(update, context):
     typing(update, context)
     values = {
         'rawtx': update.message.text
@@ -216,14 +222,12 @@ def sendTransaction(update, context):
     }
     request = requests.post('https://api.bitindex.network/api/tx/send', data=values, headers=headers)
 
-    print(request.text)
+    # print(request.text)
 
     update.message.reply_text(f"<code>{request.text}</code>", parse_mode=telegram.ParseMode.HTML)
 
 def main():
-    # Create the Updater and pass it your bot's token.
-    updater = Updater("TOKEN", use_context=True)
-
+    updater = Updater(token=token, use_context=True)
 
     # initialize filters
     filter_address = Filter_address()
@@ -236,18 +240,17 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("price", price))
-    dp.add_handler(CommandHandler("blockchainstatus", blockchainstatus))
     dp.add_handler(CommandHandler("address", check_address))
     dp.add_handler(CommandHandler("sendhash", send_hash))
-    dp.add_handler(CommandHandler("broadcast", send_rawhex))
-    dp.add_handler(CommandHandler("decodetxhex", decode_txhex))
-    # dp.add_handler(CommandHandler("getreceipt", getreceipt))
+    dp.add_handler(CommandHandler("broadcasthex", send_rawhex))
     dp.add_handler(CommandHandler("mempool", mempool))
+
+    # dp.add_handler(CommandHandler("blockchainstatus", blockchainstatus))
 
     dp.add_handler(MessageHandler(filter_address, addr))
     dp.add_handler(MessageHandler(filter_txhash, txHash))
     dp.add_handler(MessageHandler(filter_blockhash, blockHash))
-    dp.add_handler(MessageHandler(filter_rawhex, decodeHex))
+    dp.add_handler(MessageHandler(filter_rawhex, broadcasthex))
 
 
     # log all errors
