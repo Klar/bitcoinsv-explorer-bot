@@ -2,9 +2,9 @@
 
 You can use this bot <a href="https://t.me/alertgrafbot" target="_blank"> here</a>
 
-The source of information are from <a href="https://blockchair.com">Blockchair</a>
+The source of information are from <a href="https://developers.whatsonchain.com/">WhatsOnChain</a>
 
-Pull requests are welcome.
+Pull requests or ideas are welcome.
 
 Instal requirements
  sudo pip install -r requirements.txt
