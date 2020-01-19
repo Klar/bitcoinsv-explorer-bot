@@ -58,18 +58,19 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-def start(update, context):
+def help(update, context):
     address = "1GpEXHB5d8tzKZR8XAkEqrUXNXfEaQDeky"
 
     typing(update, context)
-    update.message.reply_text("Hello, I am a bot for the Bitcoin SV Blockchain. You can use these commands:\n"
+    update.message.reply_text("Hello, I am a bot for Bitcoin SV. You can use these commands:\n"
                      "/address\n"
                      "/sendhash\n"
                      "/broadcasthex\n"
                      "/mempool\n"
                      # "/blockchainstatus\n"
                      "/price\n"
-                     "/start (this message)\n\n"
+                     "/supply\n"
+                     "/help (this message)\n\n"
 
                      f"<b>Support me: {address}</b>", parse_mode=telegram.ParseMode.HTML)
 
@@ -113,6 +114,16 @@ def mempool(update, context):
 def send_hash(update, context):
     typing(update, context)
     update.message.reply_text("Send me a TX or Block hash")
+
+def supply(update, context):
+    typing(update, context)
+
+    supplyLink = "https://api.whatsonchain.com/v1/bsv/" + network + "/circulatingsupply"
+    supply = requests.get(supplyLink).json()
+    calcSupply = "{0:.2f}".format(supply / 21000000 * 100)
+    supply = "{:,}".format(supply)
+
+    update.message.reply_text(f"BSV Coin supply is: <b>{supply}</b> which is around <b>{calcSupply}%</b>\n", parse_mode=telegram.ParseMode.HTML)
 
 def addr(update, context):
     typing(update, context)
@@ -238,12 +249,13 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("price", price))
     dp.add_handler(CommandHandler("address", check_address))
     dp.add_handler(CommandHandler("sendhash", send_hash))
     dp.add_handler(CommandHandler("broadcasthex", send_rawhex))
     dp.add_handler(CommandHandler("mempool", mempool))
+    dp.add_handler(CommandHandler("supply", supply))
 
     # dp.add_handler(CommandHandler("blockchainstatus", blockchainstatus))
 
