@@ -110,7 +110,6 @@ def mempool(update, context):
                               f"<b>Transactions: </b> <code>{mempoolTXs}</code>\n"
                               f"<b>Memory usage: </b> <code>{mempoolUsage}</code>\n", parse_mode=telegram.ParseMode.HTML)
 
-
 def send_hash(update, context):
     typing(update, context)
     update.message.reply_text("Send me a TX or Block hash")
@@ -197,7 +196,7 @@ def blockHash(update, context):
 def price(update, context):
     typing(update, context)
 
-    url = "https://babel.bitdb.network/q/1DHDifPvtPgKFPZMRSxmVHhiPvFmxZwbfh/ewogICJ2IjogMywKICAiZGIiOiBbInUiXSwKICAicSI6IHsKICAgICJmaW5kIjogeyAKICAgICAgIm91dC5zMSI6ICIxOWRiek1ERGc0alo0cHZZekxiMjkxblQ4dUNxRGE2MXpIIiwKICAgICAgIm91dC5zNCI6ICIxMmVMVHh2MXZ5VWVKdHA1enFXYnFwZFd2ZkxkWjdkR2Y4IgogICAgfSwKICAgICJwcm9qZWN0IjogewogICAgICAiaW4uZS5hIjogMSwgIm91dC5zMSI6IDEsICJvdXQuczMiOiAxLCAib3V0LnM0IjogMSwgIm91dC5zNSI6IDEKICAgIH0sCiAgICAibGltaXQiIDogMQogIH0sCiAgInIiOiB7CiAgICAiZiI6ICJbLltdIHwgLm91dFswXSB8IHsgcHJlZml4OiAuczEsIGpzb246IC5zMywgY3VycmVuY3lfYWRkcjogLnM0LCBkYXRldGltZTogLnM1fSBdIgogIH0KfQo="
+    url = "https://genesis.bitdb.network/query/1FnauZ9aUH2Bex6JzdcV4eNX7oLSSEbxtN/ewogICJ2IjogMywKICAiZGIiOiBbInUiXSwKICAicSI6IHsKICAgICJmaW5kIjogeyAKICAgICAgIm91dC5zMSI6ICIxOWRiek1ERGc0alo0cHZZekxiMjkxblQ4dUNxRGE2MXpIIiwKICAgICAgImluLmUuYSI6ICIxMmVMVHh2MXZ5VWVKdHA1enFXYnFwZFd2ZkxkWjdkR2Y4IgogICAgfSwKICAgICJwcm9qZWN0IjogewogICAgICAiaW4uZS5hIjogMSwgIm91dC5zMSI6IDEsICJvdXQuczMiOiAxLCAib3V0LnM0IjogMSwgIm91dC5zNSI6IDEKICAgIH0sCiAgICAibGltaXQiIDogMQogIH0sCiAgInIiOiB7CiAgICAiZiI6ICJbLltdIHwgLm91dFswXSB8IHsgcHJlZml4OiAuczEsIGpzb246IC5zMywgY3VycmVuY3lfYWRkcjogLnM0LCBkYXRldGltZTogLnM1fSBdIgogIH0KfQo="
     api_token = '147GjmCAREtYv7FdfDivthzcmQLmdEhSYe'
     headers = {'key': api_token}
     response = requests.get(url, headers=headers)
