@@ -41,7 +41,7 @@ class Filter_blockhash(BaseFilter):
 
 class Filter_txhash(BaseFilter):
     def filter(self, message):
-        return len(message.text) == 64 and not message.text.startswith("000")
+        return len(message.text.replace(" ", "")) == 64
 
 class Filter_rawhex(BaseFilter):
     def filter(self, message):
